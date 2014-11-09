@@ -426,7 +426,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
   // Configure the breadcrumb trail.
   if (!empty($tid) && $current_term = taxonomy_term_load($tid)) {
-    if (!drupal_lookup_path('alias', arg(0) . '/' . $tid) && module_exists('pathauto')) {
+    if (variable_get('faq_auto_generate_alias', TRUE) && !drupal_lookup_path('alias', arg(0) . '/' . $tid) && module_exists('pathauto')) {
       $alias = pathauto_create_alias('faq', 'insert', arg(0) . '/' . arg(1), array('term' => $current_term));
       if ($alias) {
         drupal_goto($alias['alias']);
