@@ -13,8 +13,8 @@ function faq_views_data() {
   $data['faq_questions']['table']['group'] = t('FAQ');
   $data['faq_questions']['table']['join'] = array(
     'node' => array(
-      'left_field' => 'nid',
-      'field' => 'nid',
+      'left_field' => 'vid',
+      'field' => 'vid',
     ),
   );
   $data['faq_questions']['question'] = array(
