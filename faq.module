@@ -217,11 +217,6 @@ function faq_form($node, $form_state) {
   $form = node_content_form($node, $form_state);
   $form['title']['#description'] = t('Question to be answered.  This will appear in all question listings, such as the FAQ blocks.');
 
-  // Answer.
-  if (!empty($type->body_label)) {
-    field_attach_form('node', $node, $form, $form_state, $node->language);
-  }
-
   return $form;
 }
 
