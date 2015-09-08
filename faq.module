@@ -678,7 +678,9 @@ function _display_faq_by_category($faq_display, $category_display, $term, $displ
   }
   if (module_exists('i18n_select')) {
     $query->condition('n.language', i18n_select_langcodes());
-    $query->condition("{$td_alias}.language", i18n_select_langcodes());
+    if (module_exists('i18n_taxonomy')) {
+      $query->condition("{$td_alias}.language", i18n_select_langcodes());
+    }
   }
 
   // We only want the first column, which is nid, so that we can load all
@@ -1389,7 +1391,9 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
       }
       if (module_exists('i18n_select')) {
         $query->condition('n.language', i18n_select_langcodes());
-        $query->condition("{$td_alias}.language", i18n_select_langcodes());
+        if (module_exists('i18n_taxonomy')) {
+          $query->condition("{$td_alias}.language", i18n_select_langcodes());
+        }
       }
 
       // We only want the first column, which is nid, so that we can load all
