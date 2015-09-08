@@ -74,8 +74,9 @@ function faq_node_access($node, $op, $account = NULL) {
  */
 function faq_menu() {
   $items = array();
+  $faq_path = variable_get('faq_path', 'faq-page');
 
-  $items['faq-page'] = array(
+  $items[$faq_path] = array(
     'title' => 'Frequently Asked Questions',
     'page callback' => 'faq_page',
     'access callback' => 'user_access',
@@ -84,7 +85,7 @@ function faq_menu() {
     'type' => MENU_SUGGESTED_ITEM,
   );
 
-  $items['faq-page/list'] = array(
+  $items[$faq_path . '/list'] = array(
     'title' => 'List',
     'page callback' => 'faq_page',
     'access callback' => 'user_access',
@@ -93,7 +94,7 @@ function faq_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['faq-page/order'] = array(
+  $items[$faq_path . '/order'] = array(
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
@@ -105,7 +106,7 @@ function faq_menu() {
     'weight' => -8,
   );
 
-  $items['faq-page/%'] = array(
+  $items[$faq_path . '/%'] = array(
     'title' => 'Frequently Asked Questions',
     'page callback' => 'faq_page',
     'page arguments' => array(1),
@@ -114,7 +115,7 @@ function faq_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['faq-page/%/list'] = array(
+  $items[$faq_path . '/%/list'] = array(
     'title' => 'List',
     'page callback' => 'faq_page',
     'page arguments' => array(1),
@@ -124,7 +125,7 @@ function faq_menu() {
     'weight' => -10,
   );
 
-  $items['faq-page/%/order'] = array(
+  $items[$faq_path . '/%/order'] = array(
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
@@ -218,6 +219,14 @@ function faq_form($node, $form_state) {
   $form['title']['#description'] = t('Question to be answered.  This will appear in all question listings, such as the FAQ blocks.');
 
   return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function faq_form_faq_general_settings_form_alter(&$form, &$form_state) {
+  $form['#validate'][] = 'faq_general_settings_form_validate';
+  $form['#submit'][] = 'faq_general_settings_form_submit';
 }
 
 /**
