@@ -426,7 +426,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
   $output = $output_answers = '';
   drupal_add_css(drupal_get_path('module', 'faq') . '/faq.css');
-  if (arg(0) == 'faq-page') {
+  if (arg(0) == variable_get('faq_path', 'faq-page')) {
     drupal_set_title(t(variable_get('faq_title', 'Frequently Asked Questions')));
   }
   if (!module_exists("taxonomy")) {
