@@ -1134,7 +1134,7 @@ function faq_get_faq_list() {
 
   foreach ($nodes as $node) {
     if (node_access('view', $node)) {
-      $items[] = l($node->question, "node/$node->nid");
+      $items[] = l($node->title, "node/$node->nid");
     }
   }
 
