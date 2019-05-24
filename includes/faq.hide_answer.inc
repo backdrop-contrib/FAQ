@@ -85,7 +85,7 @@ function template_preprocess_faq_category_hide_answer(&$variables) {
 
   // Get taxonomy image.
   $variables['term_image'] = '';
-  if (module_exists('taxonomy_image')) {
+  if (module_exists('taxonomy_image') && function_exists('taxonomy_image_display')) {
     $variables['term_image'] = taxonomy_image_display($term->tid, array('class' => 'faq-tax-image'));
   }
 
