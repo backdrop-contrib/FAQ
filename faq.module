@@ -618,16 +618,22 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
     }
   }
 
-  $faq_description = t(variable_get('faq_description', ''));
-  $format = variable_get('faq_description_format', 0);
+  $faq_description_default = array('value' => '', 'format' => filter_fallback_format());
+  $faq_description = variable_get('faq_description', $faq_description_default);
+  $format = $faq_description['format'];
+
   if ($format) {
-    $faq_description = check_markup($faq_description, $format);
+    $description = check_markup($faq_description['value'], $format);
   }
+  else {
+    $description = check_plain($faq_description['value']);
+  }
+
   return theme('faq_page',
     array(
       'content' => $output,
       'answers' => $output_answers,
-      'description' => $faq_description,
+      'description' => $description,
     )
   );
 }
