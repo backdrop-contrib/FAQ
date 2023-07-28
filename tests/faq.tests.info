@@ -1,0 +1,23 @@
+[FaqTestCase]
+name = FAQ functionality
+description = Base class. No tests here.
+group = Frequently Asked Questions
+file = faq.test
+
+[FaqAccessTestClass]
+name = Access to FAQ pages
+description = Access to pages by anonymous user and logged in user with rights.
+group = Frequently Asked Questions
+file = faq.test
+
+[CreateFaqTestCase]
+name = Create FAQ node
+description = Add, edit and delete FAQ nodes when FAQ module is enabled.
+group = Frequently Asked Questions
+file = faq.test
+
+[CRAUDFaqTestCase]
+name = CRUD Question
+description = Create, read, update and delete a question
+group = Frequently Asked Questions
+file = faq.test

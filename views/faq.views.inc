@@ -10,6 +10,7 @@
  */
 function faq_views_data() {
   // faq_questions table.
+
   $data['faq_questions']['table']['group'] = t('FAQ');
   $data['faq_questions']['table']['join'] = array(
     'node' => array(
@@ -47,6 +48,7 @@ function faq_views_data() {
   );
 
   // faq_weights table.
+
   $data['faq_weights']['table']['group'] = t('FAQ');
   $data['faq_weights']['table']['join'] = array(
     'node' => array(

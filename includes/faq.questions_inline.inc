@@ -12,12 +12,13 @@
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_questions_inline(&$variables) {
+  $config = config('faq.settings');
   $data = $variables['data'];
 
   // Fetch configuration.
-  $disable_node_links = variable_get('faq_disable_node_links', FALSE);
-  $teaser = variable_get('faq_use_teaser', FALSE);
-  $links = variable_get('faq_show_node_links', FALSE);
+  $disable_node_links = $config->get('faq_disable_node_links');
+  $teaser = $config->get('faq_use_teaser');
+  $links = $config->get('faq_show_node_links');
 
   // Configure "back to top" link.
   $this_page = $_GET['q'];
@@ -26,9 +27,9 @@ function template_preprocess_faq_questions_inline(&$variables) {
   // Configure labels.
   $variables['question_label'] = '';
   $variables['answer_label'] = '';
-  if (variable_get('faq_qa_mark', FALSE)) {
-    $variables['question_label'] = check_plain(variable_get('faq_question_label', "Q:"));
-    $variables['answer_label'] = check_plain(variable_get('faq_answer_label', "A:"));
+  if ($config->get('faq_qa_mark')) {
+    $variables['question_label'] = check_plain($config->get('faq_question_label'));
+    $variables['answer_label'] = check_plain($config->get('faq_answer_label'));
   }
 
   $nodes = array();
@@ -50,6 +51,7 @@ function template_preprocess_faq_questions_inline(&$variables) {
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_category_questions_inline(&$variables) {
+  $config = config('faq.settings');
   $data = $variables['data'];
   $category_display = $variables['category_display'];
   $term = $variables['term'];
@@ -57,13 +59,13 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
   $class = $variables['class'];
 
   // Fetch configuration.
-  $teaser = variable_get('faq_use_teaser', FALSE);
-  $links = variable_get('faq_show_node_links', FALSE);
-  $disable_node_links = variable_get('faq_disable_node_links', FALSE);
-  $display_faq_count = variable_get('faq_count', FALSE);
-  $hide_child_terms = variable_get('faq_hide_child_terms', FALSE);
-  $show_term_page_children = variable_get('faq_show_term_page_children', FALSE);
-  $default_sorting = variable_get('faq_default_sorting', 'DESC');
+  $teaser = $config->get('faq_use_teaser');
+  $links = $config->get('faq_show_node_links');
+  $disable_node_links = $config->get('faq_disable_node_links');
+  $display_faq_count = $config->get('faq_count');
+  $hide_child_terms = $config->get('faq_hide_child_terms');
+  $show_term_page_children = $config->get('faq_show_term_page_children');
+  $default_sorting = $config->get('faq_default_sorting');
 
   // Initialise some variables.
   $variables['use_teaser'] = $teaser;
@@ -93,9 +95,9 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
   // Configure labels.
   $variables['question_label'] = '';
   $variables['answer_label'] = '';
-  if (variable_get('faq_qa_mark', FALSE)) {
-    $variables['question_label'] = check_plain(variable_get('faq_question_label', "Q:"));
-    $variables['answer_label'] = check_plain(variable_get('faq_answer_label', "A:"));
+  if ($config->get('faq_qa_mark')) {
+    $variables['question_label'] = check_plain($config->get('faq_question_label'));
+    $variables['answer_label'] = check_plain($config->get('faq_answer_label'));
   }
 
   // Get number of questions, and account for hidden sub-categories.
@@ -129,7 +131,7 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
     $child_categories = faq_view_child_category_headers($term);
   }
   $variables['subcat_list'] = $child_categories;
-  $variables['subcat_list_style'] = variable_get('faq_category_listing', 'ul');
+  $variables['subcat_list_style'] = $config->get('faq_category_listing');
 
   // Configure class (faq-qa or faq-qa-hide).
   if ($get_child_terms == $term->tid) {

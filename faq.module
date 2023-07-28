@@ -7,21 +7,14 @@
  */
 
 /**
- * Implements hook_help().
+ * Implements hook_config_info().
  */
-function faq_help($path, $arg) {
-  $output = '';
-  switch ($path) {
-    case 'admin/help#faq':
-      $output .= '<p>' . t("This module allows users with the 'administer faq' permission to create question and answer pairs which will be displayed on the faq page.  The faq page is automatically generated from the FAQ nodes configured and the layout of this page can be modified on the settings page.  Users will need the 'view faq page' permission in order to view the faq page.") . '</p>' .
-        '<p>' . t("To create a question and answer, the user must create a 'FAQ' node (Create content >> FAQ).  This screen allows the user to edit the question and answer text.  If the 'Taxonomy' module is enabled and there are some terms configured for the FAQ node type, it will also be possible to put the questions into different categories when editing.") . '</p>' .
-        '<p>' . t("The 'Frequently Asked Questions' settings configuration screen will allow users with 'administer faq' permissions to specify different layouts of the questions and answers.") . '</p>' .
-        '<p>' . t("All users with 'view faq page' permissions will be able to view the generated FAQ page.") . '</p>';
-      return $output;
-
-    case 'admin/modules#description':
-      return t('Allows the user to configure the layout of questions and answers on a FAQ page.');
-  }
+function faq_config_info() {
+  $prefixes['faq.settings'] = array(
+    'label' => t('Frequently Asked Questions settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
 }
 
 /**
@@ -40,7 +33,6 @@ function faq_permission() {
     ),
   );
 }
-
 
 /**
  * Implements hook_node_access().
@@ -98,7 +90,7 @@ function faq_menu() {
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('faq_order_settings_form'),
     'access callback' => 'user_access',
     'access arguments' => array('administer faq order'),
@@ -129,7 +121,7 @@ function faq_menu() {
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('faq_order_settings_form', 1),
     'access callback' => 'user_access',
     'access arguments' => array('administer faq order'),
@@ -149,7 +141,7 @@ function faq_menu() {
     'title' => 'General',
     'description' => 'Allows the user to configure the header and descriptive text for the FAQ page.',
     'file' => 'faq.admin.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('faq_general_settings_form'),
     'access callback' => 'user_access',
     'access arguments' => array('administer faq'),
@@ -160,7 +152,7 @@ function faq_menu() {
     'title' => 'Questions',
     'description' => 'Allows the user to configure the layout of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('faq_questions_settings_form'),
     'access callback' => 'user_access',
     'access arguments' => array('administer faq'),
@@ -171,7 +163,7 @@ function faq_menu() {
     'title' => 'Categories',
     'description' => 'Allows the user to configure the layout of questions and answers using categories on a FAQ page.',
     'file' => 'faq.admin.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('faq_categories_settings_form'),
     'access callback' => 'user_access',
     'access arguments' => array('administer faq'),
@@ -179,25 +171,6 @@ function faq_menu() {
     'weight' => -8,
   );
   return $items;
-}
-
-/**
- * Implements hook_node_info().
- *
- * Defines the FAQ node/content type.
- * @return array
- *   An array, containing the title, module name and the description.
- */
-function faq_node_info() {
-  return array(
-    'faq' => array(
-      'name' => t('FAQ'),
-      'base' => 'faq',
-      'description' => t('A frequently asked question and its answer.'),
-      'has_title' => TRUE,
-      'title_label' => t('Question'),
-    ),
-  );
 }
 
 /**
@@ -242,11 +215,11 @@ function faq_insert($node) {
   $detailed_question = !empty($items) ? $items[0]['value'] : '';
   db_insert('faq_questions')
     ->fields(array(
-      'nid' => $node->nid,
-      'vid' => $node->vid,
-      'question' => $node->title,
-      'detailed_question' => $detailed_question,
-    ))
+    'nid' => $node->nid,
+    'vid' => $node->vid,
+    'question' => $node->title,
+    'detailed_question' => $detailed_question,
+  ))
     ->execute();
 }
 
@@ -271,13 +244,13 @@ function faq_update($node) {
     // Just to be safe, we do a merge query instead of an update query.
     db_merge('faq_questions')
       ->fields(array(
-        'question' => $node->title,
-        'detailed_question' => $detailed_question['value'],
-      ))
+      'question' => $node->title,
+      'detailed_question' => $detailed_question['value'],
+    ))
       ->key(array(
-        'nid' => $node->nid,
-        'vid' => $node->vid,
-      ))
+      'nid' => $node->nid,
+      'vid' => $node->vid,
+    ))
       ->execute();
   }
 }
@@ -309,26 +282,26 @@ function faq_load($nodes) {
   return;
   // @codingStandardsIgnoreStart
   /*
-  foreach ($nodes as $nid => &$node) {
-    // @todo: change logic to load faq nodes - do not rely on specific faq table
-    $result = db_query('SELECT question, detailed_question FROM {faq_questions} WHERE nid = :nid AND vid = :vid', array(
-      ':nid' => $node->nid,
-      ':vid' => $node->vid,
-    ))->fetchObject();
-    if ($result && !drupal_match_path($_GET['q'], 'node/' . $node->nid . '/edit')) {
-      $question_length = variable_get('faq_question_length', 'short');
-      if ($question_length == 'long' && !empty($result->detailed_question)) {
-        $result->title = $result->detailed_question;
-      }
-      else {
-        $result->title = $result->question;
-      }
-    }
-    foreach ($result as $property => &$value) {
-      $node->$property = $value;
-    }
-  }
-  */
+   foreach ($nodes as $nid => &$node) {
+   // @todo: change logic to load faq nodes - do not rely on specific faq table
+   $result = db_query('SELECT question, detailed_question FROM {faq_questions} WHERE nid = :nid AND vid = :vid', array(
+   ':nid' => $node->nid,
+   ':vid' => $node->vid,
+   ))->fetchObject();
+   if ($result && !backdrop_match_path($_GET['q'], 'node/' . $node->nid . '/edit')) {
+   $question_length = variable_get('faq_question_length', 'short');
+   if ($question_length == 'long' && !empty($result->detailed_question)) {
+   $result->title = $result->detailed_question;
+   }
+   else {
+   $result->title = $result->question;
+   }
+   }
+   foreach ($result as $property => &$value) {
+   $node->$property = $value;
+   }
+   }
+   */
   // @codingStandardsIgnoreEnd
 }
 
@@ -346,7 +319,8 @@ function faq_node_revision_delete($node) {
  * Implements hook_view().
  */
 function faq_view($node, $view_mode) {
-  drupal_add_css(drupal_get_path('module', 'faq') . '/faq.css');
+  $config = config('faq.settings');
+  backdrop_add_css(backdrop_get_path('module', 'faq') . '/css/faq.css');
 
   $detailed_question = FALSE;
   // Get the detailed question.
@@ -363,7 +337,7 @@ function faq_view($node, $view_mode) {
     }
     else {
       // On other pages, consider the admin settings.
-      if (variable_get('faq_question_length', 'short') == 'both' && variable_get('faq_display', 'questions_top') == 'hide_answer') {
+      if ($config->get('faq_question_length') == 'both' && $config->get('faq_display') == 'hide_answer') {
         $show_question = TRUE;
       }
     }
@@ -390,7 +364,7 @@ function faq_view($node, $view_mode) {
 function faq_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'faq') . '/views',
+    'path' => backdrop_get_path('module', 'faq') . '/views',
   );
 }
 
@@ -412,8 +386,9 @@ function faq_views_api() {
  *   questions and answers.
  */
 function faq_page($tid = 0, $faq_display = '', $category_display = '') {
-  if (module_exists('pathauto')) {
-    module_load_include('inc', 'pathauto');
+  $config = config('faq.settings');
+  if (module_exists('path')) {
+    module_load_include('inc', 'path');
   }
 
   $faqpath = _faq_path();
@@ -427,9 +402,9 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
   );
 
   $output = $output_answers = '';
-  drupal_add_css(drupal_get_path('module', 'faq') . '/faq.css');
+  backdrop_add_css(backdrop_get_path('module', 'faq') . '/css/faq.css');
   if (arg(0) == $faqpath) {
-    drupal_set_title(t(variable_get('faq_title', 'Frequently Asked Questions')));
+    backdrop_set_title(t($config->get('faq_title')));
   }
   if (!module_exists("taxonomy")) {
     $tid = 0;
@@ -437,46 +412,46 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
   // Configure the breadcrumb trail.
   if (!empty($tid) && $current_term = taxonomy_term_load($tid)) {
-    if (variable_get('faq_auto_generate_alias', TRUE) && !drupal_lookup_path('alias', arg(0) . '/' . $tid) && module_exists('pathauto')) {
-      $alias = pathauto_create_alias('faq', 'insert', arg(0) . '/' . arg(1), array('term' => $current_term));
+    if ($config->get('faq_auto_generate_alias') && !backdrop_lookup_path('alias', arg(0) . '/' . $tid) && module_exists('path')) {
+      $alias = path_generate_entity_alias($current_term, arg(0) . '/' . arg(1));
       if ($alias) {
-        drupal_goto($alias['alias']);
+        backdrop_goto($alias['alias']);
       }
     }
-    if (drupal_match_path($_GET['q'], $faqpath . '/*')) {
+    if (backdrop_match_path($_GET['q'], $faqpath . '/*')) {
       faq_set_breadcrumb($current_term);
     }
   }
 
   if (empty($faq_display)) {
-    $faq_display = variable_get('faq_display', 'questions_top');
+    $faq_display = $config->get('faq_display');
   }
-  $use_categories = variable_get('faq_use_categories', FALSE);
+  $use_categories = $config->get('faq_use_categories');
   if (!empty($category_display)) {
     $use_categories = TRUE;
   }
   else {
-    $category_display = variable_get('faq_category_display', 'categories_inline');
+    $category_display = $config->get('faq_category_display');
   }
   if (!module_exists("taxonomy")) {
     $use_categories = FALSE;
   }
 
-  $faq_path = drupal_get_path('module', 'faq') . '/includes';
+  $faq_path = backdrop_get_path('module', 'faq') . '/includes';
 
   if (($use_categories && $category_display == 'hide_qa') || $faq_display == 'hide_answer') {
-    drupal_add_js(array('faq' => array('faq_hide_qa_accordion' => variable_get('faq_hide_qa_accordion', FALSE))), array('type' => 'setting', 'scope' => JS_DEFAULT));
-    drupal_add_js(array('faq' => array('faq_category_hide_qa_accordion' => variable_get('faq_category_hide_qa_accordion', FALSE))), array('type' => 'setting', 'scope' => JS_DEFAULT));
-    drupal_add_js(drupal_get_path('module', 'faq') . '/faq.js');
+    backdrop_add_js(array('faq' => array('faq_hide_qa_accordion' => $config->get('faq_hide_qa_accordion'))), array('type' => 'setting', 'scope' => JS_DEFAULT));
+    backdrop_add_js(array('faq' => array('faq_category_hide_qa_accordion' => $config->get('faq_category_hide_qa_accordion'))), array('type' => 'setting', 'scope' => JS_DEFAULT));
+    backdrop_add_js(backdrop_get_path('module', 'faq') . '/js/faq.js');
   }
 
   // Non-categorized questions and answers.
   if (!$use_categories || ($category_display == 'none' && empty($tid))) {
     if (!empty($tid)) {
-      drupal_not_found();
+      backdrop_not_found();
       return;
     }
-    $default_sorting = variable_get('faq_default_sorting', 'DESC');
+    $default_sorting = $config->get('faq_default_sorting');
 
     $query = db_select('node', 'n');
     $weight_alias = $query->leftJoin('faq_weights', 'w', '%alias.nid=n.nid');
@@ -519,22 +494,22 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
     switch ($faq_display) {
       case 'questions_top':
-        include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.questions_top.inc';
+        include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.questions_top.inc';
         $output = theme('faq_questions_top', array('data' => $data));
         break;
 
       case 'hide_answer':
-        include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.hide_answer.inc';
+        include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.hide_answer.inc';
         $output = theme('faq_hide_answer', array('data' => $data));
         break;
 
       case 'questions_inline':
-        include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.questions_inline.inc';
+        include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.questions_inline.inc';
         $output = theme('faq_questions_inline', array('data' => $data));
         break;
 
       case 'new_page':
-        include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.new_page.inc';
+        include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.new_page.inc';
         $output = theme('faq_new_page', array('data' => $data));
         break;
     }
@@ -542,27 +517,27 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
   // Categorize questions.
   else {
-    $hide_child_terms = variable_get('faq_hide_child_terms', FALSE);
+    $hide_child_terms = $config->get('faq_hide_child_terms');
 
     // If we're viewing a specific category/term.
     if (!empty($tid)) {
       if ($term = taxonomy_term_load($tid)) {
-        $title = t(variable_get('faq_title', 'Frequently Asked Questions'));
+        $title = t($config->get('faq_title'));
         if (arg(0) == 'faq-page' && is_numeric(arg(1))) {
-          drupal_set_title($title . ($title ? ' - ' : '') . faq_tt("taxonomy:term:$term->tid:name", $term->name));
+          backdrop_set_title($title . ($title ? ' - ' : '') . faq_tt("taxonomy:term:$term->tid:name", $term->name));
         }
         _display_faq_by_category($faq_display, $category_display, $term, 0, $output, $output_answers);
         return theme('faq_page', array('content' => $output, 'answers' => $output_answers));
       }
       else {
-        drupal_not_found();
+        backdrop_not_found();
         return;
       }
     }
 
-    $list_style = variable_get('faq_category_listing', 'ul');
+    $list_style = $config->get('faq_category_listing');
     $vocabularies = taxonomy_get_vocabularies('faq');
-    $vocab_omit = variable_get('faq_omit_vocabulary', array());
+    $vocab_omit = $config->get('faq_omit_vocabulary');
     $items = array();
     $vocab_items = array();
     $valid_vocab = FALSE;
@@ -607,19 +582,22 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
     if ($category_display == "new_page") {
       $output = theme('item_list',
         array(
-          'items' => $items,
-          'title' => NULL,
-          'type' => $list_style,
-        )
+        'items' => $items,
+        'title' => NULL,
+        'type' => $list_style,
+      )
       );
     }
     if (!$valid_vocab) {
-      drupal_set_message(t('Categories are enabled but no vocabulary is associated with the FAQ content type. Either create a vocabulary or disable categorization in order for questions to appear.'), 'error');
+      backdrop_set_message(t('Categories are enabled but no vocabulary is associated with the FAQ content type. Either create a vocabulary or disable categorization in order for questions to appear.'), 'error');
     }
   }
 
-  $faq_description_default = array('value' => '', 'format' => filter_fallback_format());
-  $faq_description = variable_get('faq_description', $faq_description_default);
+  $faq_description_default = array(
+    'value' => '',
+    'format' => filter_fallback_format(),
+  );
+  $faq_description = $config->get('faq_description');
   $format = $faq_description['format'];
 
   if ($format) {
@@ -631,10 +609,10 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
 
   return theme('faq_page',
     array(
-      'content' => $output,
-      'answers' => $output_answers,
-      'description' => $description,
-    )
+    'content' => $output,
+    'answers' => $output_answers,
+    'description' => $description,
+  )
   );
 }
 
@@ -663,7 +641,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
  */
 function _display_faq_by_category($faq_display, $category_display, $term, $display_header, &$output, &$output_answers) {
 
-  $default_sorting = variable_get('faq_default_sorting', 'DESC');
+  $default_sorting = config_get('faq.settings', 'faq_default_sorting');
 
   $query = db_select('node', 'n');
   $ti_alias = $query->innerJoin('taxonomy_index', 'ti', '(n.nid = %alias.nid)');
@@ -727,73 +705,73 @@ function _display_faq_by_category($faq_display, $category_display, $term, $displ
     $faq_class = "faq-qa-hide";
   }
 
-  $faq_path = drupal_get_path('module', 'faq') . '/includes';
+  $faq_path = backdrop_get_path('module', 'faq') . '/includes';
 
   switch ($faq_display) {
     case 'questions_top':
-      include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.questions_top.inc';
+      include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.questions_top.inc';
       // @todo fix workaround: have to share result.
       $output .= theme('faq_category_questions_top',
         array(
-          'data' => $data,
-          'display_header' => $display_header,
-          'category_display' => $category_display,
-          'term' => $term,
-          'class' => $faq_class,
-          'parent_term' => $term,
-        )
+        'data' => $data,
+        'display_header' => $display_header,
+        'category_display' => $category_display,
+        'term' => $term,
+        'class' => $faq_class,
+        'parent_term' => $term,
+      )
       );
       $output_answers .= theme('faq_category_questions_top_answers',
         array(
-          'data' => $data,
-          'display_header' => $display_header,
-          'category_display' => $category_display,
-          'term' => $term,
-          'class' => $faq_class,
-          'parent_term' => $term,
-        )
+        'data' => $data,
+        'display_header' => $display_header,
+        'category_display' => $category_display,
+        'term' => $term,
+        'class' => $faq_class,
+        'parent_term' => $term,
+      )
       );
       break;
 
     case 'hide_answer':
-      include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.hide_answer.inc';
+      include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.hide_answer.inc';
       $output .= theme('faq_category_hide_answer',
         array(
-          'data' => $data,
-          'display_header' => $display_header,
-          'category_display' => $category_display,
-          'term' => $term,
-          'class' => $faq_class,
-          'parent_term' => $term,
-        )
+        'data' => $data,
+        'display_header' => $display_header,
+        'category_display' => $category_display,
+        'term' => $term,
+        'class' => $faq_class,
+        'parent_term' => $term,
+      )
       );
       break;
 
     case 'questions_inline':
-      include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.questions_inline.inc';
+      include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.questions_inline.inc';
       $output .= theme('faq_category_questions_inline',
         array(
-          'data' => $data,
-          'display_header' => $display_header,
-          'category_display' => $category_display,
-          'term' => $term,
-          'class' => $faq_class,
-          'parent_term' => $term,
-        )
+        'data' => $data,
+        'display_header' => $display_header,
+        'category_display' => $category_display,
+        'term' => $term,
+        'class' => $faq_class,
+        'parent_term' => $term,
+      )
       );
       break;
 
     case 'new_page':
-      include_once DRUPAL_ROOT . '/' . $faq_path . '/faq.new_page.inc';
+      include_once BACKDROP_ROOT . '/' . $faq_path . '/faq.new_page.inc';
       $output .= theme('faq_category_new_page',
         array(
-          'data' => $data,
-          'display_header' => $display_header,
-          'category_display' => $category_display,
-          'term' => $term,
-          'class' => $faq_class,
-          'parent_term' => $term,
-        )
+        'data' => $data,
+        'display_header' => $display_header,
+        'category_display' => $category_display,
+        'term' => $term,
+        'class' => $faq_class,
+        'parent_term' => $term,
+      )
       );
       break;
   }
@@ -809,7 +787,7 @@ function _display_faq_by_category($faq_display, $category_display, $term, $displ
  * Implements hook_theme().
  */
 function faq_theme() {
-  $path = drupal_get_path('module', 'faq') . '/includes';
+  $path = backdrop_get_path('module', 'faq') . '/includes';
   return array(
     'field_detailed_question' => array(
       'render element' => 'element',
@@ -928,6 +906,7 @@ function faq_block_info() {
  * Implements hook_block_view().
  */
 function faq_block_view($delta) {
+  $config = config('faq.settings');
   static $vocabularies, $terms;
 
   $block = array();
@@ -937,7 +916,7 @@ function faq_block_view($delta) {
         if (!isset($terms)) {
           $terms = array();
           $vocabularies = taxonomy_get_vocabularies('faq');
-          $vocab_omit = array_flip(variable_get('faq_omit_vocabulary', array()));
+          $vocab_omit = array_flip($config->get('faq_omit_vocabulary'));
           $vocabularies = array_diff_key($vocabularies, $vocab_omit);
           foreach ($vocabularies as $vocab) {
             foreach (taxonomy_get_tree($vocab->vid) as $term) {
@@ -953,13 +932,13 @@ function faq_block_view($delta) {
           foreach ($terms as $name => $tid) {
             $items[] = l(faq_tt("taxonomy:term:$tid:name", $name), _faq_path() . '/' . $tid);
           }
-          $list_style = variable_get('faq_category_listing', 'ul');
+          $list_style = $config->get('faq_category_listing');
           $block['content'] = theme('item_list',
             array(
-              'items' => $items,
-              'title' => NULL,
-              'type' => $list_style,
-            )
+            'items' => $items,
+            'title' => NULL,
+            'type' => $list_style,
+          )
           );
         }
       }
@@ -982,12 +961,13 @@ function faq_block_view($delta) {
  *   Return a HTML formatted list of terms indented according to the term depth.
  */
 function _get_indented_faq_terms($vid, $tid) {
-  if (module_exists('pathauto')) {
-    module_load_include('inc', 'pathauto');
+  $config = config('faq.settings');
+  if (module_exists('path')) {
+    module_load_include('inc', 'path');
   }
 
-  $display_faq_count = variable_get('faq_count', FALSE);
-  $hide_child_terms = variable_get('faq_hide_child_terms', FALSE);
+  $display_faq_count = $config->get('faq_count');
+  $hide_child_terms = $config->get('faq_hide_child_terms');
 
   $items = array();
   $tree = taxonomy_get_tree($vid, $tid, 1, TRUE);
@@ -1025,8 +1005,8 @@ function _get_indented_faq_terms($vid, $tid) {
       if ($term_node_count > 0) {
         $path = _faq_path() . "/$term->tid";
 
-        if (!drupal_lookup_path('alias', arg(0) . '/' . $term->tid) && module_exists('pathauto')) {
-          $alias = pathauto_create_alias('faq', 'insert', arg(0) . '/' . $term->tid, array('term' => $term));
+        if (!backdrop_lookup_path('alias', arg(0) . '/' . $term->tid) && module_exists('path')) {
+          $alias = path_generate_entity_alias($term, arg(0) . '/' . $term->tid);
           if ($alias) {
             $path = $alias['alias'];
           }
@@ -1073,7 +1053,7 @@ function _get_indented_faq_terms($vid, $tid) {
 function faq_get_terms() {
   $items = array();
   $vocabularies = taxonomy_get_vocabularies('faq');
-  $vocab_omit = array_flip(variable_get('faq_omit_vocabulary', array()));
+  $vocab_omit = array_flip(config_get('faq.settings', 'faq_omit_vocabulary'));
   $vocabularies = array_diff_key($vocabularies, $vocab_omit);
   foreach ($vocabularies as $vid => $vobj) {
     $vocab_items = _get_indented_faq_terms($vid, 0);
@@ -1091,15 +1071,16 @@ function faq_get_terms() {
  *   return a list of faq nodes.
  */
 function faq_get_faq_list() {
+  $config = config('faq.settings');
   // Return list of vocab terms if categories are configured.
-  $use_categories = variable_get('faq_use_categories', FALSE);
+  $use_categories = $config->get('faq_use_categories');
   if ($use_categories) {
     return faq_get_terms();
   }
 
   // Otherwise return list of weighted FAQ nodes.
   $items = array();
-  $default_sorting = variable_get('faq_default_sorting', 'DESC');
+  $default_sorting = $config->get('faq_default_sorting');
 
   $query = db_select('node', 'n');
   $w_alias = $query->leftJoin('faq_weights', 'w', "%alias.nid = n.nid");
@@ -1183,7 +1164,8 @@ if (!function_exists('array_diff_key')) {
  *   Link anchor to use in question links.
  */
 function faq_view_question(&$data, $node, $path = NULL, $anchor = NULL) {
-  $disable_node_links = variable_get('faq_disable_node_links', FALSE);
+  $config = config('faq.settings');
+  $disable_node_links = $config->get('faq_disable_node_links');
   $question = '';
 
   // Don't link to faq node, instead provide no link, or link to current page.
@@ -1230,9 +1212,9 @@ function faq_view_question(&$data, $node, $path = NULL, $anchor = NULL) {
     $detailed_question = reset($dq);
   }
 
-  if (variable_get('faq_display', 'questions_top') != 'hide_answer'
-        && !empty($detailed_question['safe_value'])
-        && variable_get('faq_question_length', 'short') == 'both') {
+  if ($config->get('faq_display') != 'hide_answer'
+          && !empty($detailed_question['safe_value'])
+          && $config->get('faq_question_length') == 'both') {
     $question .= '<div class="faq-detailed-question">' . $detailed_question['safe_value'] . '</div>';
   }
   $data['question'] = $question;
@@ -1269,7 +1251,7 @@ function faq_view_answer(&$data, $node, $back_to_top, $teaser, $links) {
     $node->content['links']['node']['#links']['faq_edit_link'] = array(
       'title' => t('Edit answer'),
       'href' => "node/$node->nid/edit",
-      'query' => drupal_get_destination(),
+      'query' => backdrop_get_destination(),
       'attributes' => array('title' => t('Edit answer')),
     );
   }
@@ -1296,18 +1278,18 @@ function faq_view_answer(&$data, $node, $back_to_top, $teaser, $links) {
 
   // Allow modules to modify the structured node.
   $type = 'node';
-  drupal_alter(array('node_view', 'entity_view'), $build, $type);
+  backdrop_alter(array('node_view', 'entity_view'), $build, $type);
 
-  $node_links = ($links ? $build['links']['node']['#links'] : (!empty($back_to_top) ? array($build['links']['node']['#links']['faq_back_to_top']) : NULL));
+  $node_links = ($links ? $build['links']['node']['#links'] : (!empty($back_to_top)?array($build['links']['node']['#links']['faq_back_to_top']) : NULL));
   unset($build['links']);
 
   // We don't want node title displayed.
   unset($build['#theme']);
 
-  $content = drupal_render($build);
+  $content = backdrop_render($build);
 
   $data['body'] = $content;
-  $data['links'] = !empty($node_links) ? theme('links', array('links' => $node_links, 'attributes' => array('class' => 'links inline'))) : '';
+  $data['links'] = !empty($node_links)?theme('links', array('links' => $node_links, 'attributes' => array('class' => 'links inline'))) : '';
 }
 
 /**
@@ -1323,7 +1305,7 @@ function faq_view_answer(&$data, $node, $back_to_top, $teaser, $links) {
  */
 function faq_init_back_to_top($path) {
   $back_to_top = array();
-  $back_to_top_text = trim(variable_get('faq_back_to_top', 'Back to Top'));
+  $back_to_top_text = trim(config_get('faq.settings', 'faq_back_to_top'));
   if (!empty($back_to_top_text)) {
     $back_to_top = array(
       'title' => check_plain($back_to_top_text),
@@ -1369,7 +1351,7 @@ function faq_init_back_to_top($path) {
 function faq_get_child_categories_faqs($term, $theme_function, $default_weight, $default_sorting, $category_display, $class, $parent_term = NULL) {
   $output = array();
 
-  $list = taxonomy_get_children($term->tid);
+  $list = taxonomy_term_load_children($term->tid);
 
   if (function_exists('i18n_taxonomy_localize_terms')) {
     $list = i18n_taxonomy_localize_terms($list);
@@ -1428,13 +1410,13 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
 
       $output[] = theme($theme_function,
         array(
-          'data' => $data,
-          'display_header' => 1,
-          'category_display' => $category_display,
-          'term' => $child_term,
-          'class' => $class,
-          'parent_term' => $parent_term,
-        )
+        'data' => $data,
+        'display_header' => 1,
+        'category_display' => $category_display,
+        'term' => $child_term,
+        'class' => $class,
+        'parent_term' => $parent_term,
+      )
       );
     }
   }
@@ -1453,7 +1435,7 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
  */
 function faq_view_child_category_headers($term) {
   $child_categories = array();
-  $list = taxonomy_get_children($term->tid);
+  $list = taxonomy_term_load_children($term->tid);
 
   if (function_exists('i18n_taxonomy_localize_terms')) {
     $list = i18n_taxonomy_localize_terms($list);
@@ -1481,9 +1463,9 @@ function faq_view_child_category_headers($term) {
 }
 
 /**
- * Implements hook_pathauto().
+ * Implements hook_path_info().
  */
-function faq_pathauto($op) {
+function faq_path_info($op) {
   switch ($op) {
     case 'settings':
       $settings = array();
@@ -1491,7 +1473,7 @@ function faq_pathauto($op) {
       $settings['groupheader'] = t('FAQ category page settings');
       $settings['patterndescr'] = t('Default path pattern (applies to all FAQ categories with blank patterns below)');
       $settings['patterndefault'] = t(_faq_path() . '/[term:tid]');
-      $settings['batch_update_callback'] = 'faq_pathauto_bulkupdate';
+      $settings['batch_update_callback'] = 'faq_path_bulkupdate';
       $settings['token_type'] = 'term';
       return (object) $settings;
 
@@ -1511,8 +1493,8 @@ function faq_path_alias_types() {
 /**
  * Batch processing callback; Generate aliases for faq pages.
  */
-function faq_pathauto_bulkupdate() {
-  module_load_include('inc', 'pathauto');
+function faq_path_bulkupdate() {
+  module_load_include('inc', 'path');
 
   if (!isset($context['sandbox']['current'])) {
     $context['sandbox']['count'] = 0;
@@ -1522,7 +1504,7 @@ function faq_pathauto_bulkupdate() {
   $faq_path = _faq_path();
   // Get the allowed vocabs.
   $vocabularies = taxonomy_get_vocabularies('faq');
-  $vocab_omit = variable_get('faq_omit_vocabulary', array());
+  $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
   $faq_vocabs = array();
   foreach ($vocabularies as $vid => $vobj) {
     if (isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) {
@@ -1539,7 +1521,7 @@ function faq_pathauto_bulkupdate() {
   $query->condition('td.tid', $context['sandbox']['current'], '>');
   $query->condition('td.vid', $faq_vocabs, 'IN');
   $query->orderBy('td.tid');
-  $query->addTag('pathauto_bulk_update');
+  $query->addTag('path_bulk_update');
   $query->addMetaData('entity', 'taxonomy_term');
 
   // Get the total amount of items to process.
@@ -1558,7 +1540,7 @@ function faq_pathauto_bulkupdate() {
 
   $terms = taxonomy_term_load_multiple($tids);
   foreach ($terms as $term) {
-    pathauto_create_alias('faq', 'bulkupdate', $faq_path . '/' . $term->tid, array('term' => $term));
+    path_generate_entity_alias($term, $faq_path . '/' . $term->tid);
   }
   $context['sandbox']['count'] += count($tids);
   $context['sandbox']['current'] = max($tids);
@@ -1573,16 +1555,15 @@ function faq_pathauto_bulkupdate() {
  * Implements hook_taxonomy_term_insert().
  */
 function faq_taxonomy_term_insert($term) {
-  if (module_exists('pathauto')) {
-    module_load_include('inc', 'pathauto');
+  if (module_exists('path')) {
 
     $vocabularies = taxonomy_get_vocabularies('faq');
-    $vocab_omit = variable_get('faq_omit_vocabulary', array());
+    $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
       if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vid != $vid)) {
         continue;
       }
-      $alias = pathauto_create_alias('faq', 'insert', _faq_path() . '/' . $term->tid, array('term' => $term));
+      $alias = path_generate_entity_alias($term, _faq_path() . '/' . $term->tid);
     }
   }
 }
@@ -1591,16 +1572,15 @@ function faq_taxonomy_term_insert($term) {
  * Implements hook_taxonomy_term_update().
  */
 function faq_taxonomy_term_update($term) {
-  if (module_exists('pathauto')) {
-    module_load_include('inc', 'pathauto');
+  if (module_exists('path')) {
 
     $vocabularies = taxonomy_get_vocabularies('faq');
-    $vocab_omit = variable_get('faq_omit_vocabulary', array());
+    $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
       if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vid != $vid)) {
         continue;
       }
-      $alias = pathauto_create_alias('faq', 'update', _faq_path() . '/' . $term->tid, array('term' => $term));
+      $alias = path_generate_entity_alias($term, _faq_path() . '/' . $term->tid);
     }
   }
 }
@@ -1609,9 +1589,8 @@ function faq_taxonomy_term_update($term) {
  * Implements hook_taxonomy_term_delete().
  */
 function faq_taxonomy_term_delete($term) {
-  if (module_exists('pathauto')) {
-    module_load_include('inc', 'pathauto');
-    pathauto_path_delete_all(_faq_path() . "/{$term->tid}");
+  if (module_exists('path')) {
+    path_delete_all_by_source(_faq_path() . "/{$term->tid}");
   }
 }
 
@@ -1625,24 +1604,25 @@ function faq_taxonomy_term_delete($term) {
  *   Breadcrumbs.
  */
 function faq_set_breadcrumb($term = NULL) {
+  $config = config('faq.settings');
   $breadcrumb = array();
   $faq_path = _faq_path();
-  if (variable_get('faq_custom_breadcrumbs', TRUE)) {
+  if ($config->get('faq_custom_breadcrumbs')) {
     if (module_exists("taxonomy") && $term) {
       $breadcrumb[] = l(faq_tt("taxonomy:term:$term->tid:name", $term->name), $faq_path . '/' . $term->tid);
-      while ($parents = taxonomy_get_parents($term->tid)) {
+      while ($parents = taxonomy_term_load_parents($term->tid)) {
         $term = array_shift($parents);
         $breadcrumb[] = l(faq_tt("taxonomy:term:$term->tid:name", $term->name), $faq_path . '/' . $term->tid);
       }
     }
-    $breadcrumb[] = l(t(variable_get('faq_title', 'Frequently Asked Questions')), $faq_path);
-    $breadcrumb[] = l(t('Home'), NULL, array('attributes' => array('title' => variable_get('site_name', ''))));
+    $breadcrumb[] = l(t($config->get('faq_title')), $faq_path);
+    $breadcrumb[] = l(t('Home'), NULL, array('attributes' => array('title' => config_get('system.performance', 'site_name'))));
     $breadcrumb = array_reverse($breadcrumb);
-    return drupal_set_breadcrumb($breadcrumb);
+    return backdrop_set_breadcrumb($breadcrumb);
   }
   // This is also used to set the breadcrumbs in the faq_preprocess_page()
   // so we need to return a valid trail.
-  return drupal_get_breadcrumb();
+  return backdrop_get_breadcrumb();
 }
 
 /**
@@ -1724,7 +1704,7 @@ function _faq_faq_page_filter_replacer($matches) {
     'new_page',
   );
   $default_category_display = array('hide_qa', 'new_page', 'categories_inline');
-  if (drupal_strlen($matches[1])) {
+  if (backdrop_strlen($matches[1])) {
     list($tid, $faq_display, $category_display) = explode(',', $matches[1] . ',,');
     $tid = (int) trim($tid);
     $faq_display = trim($faq_display);
@@ -1795,7 +1775,7 @@ function theme_faq_page($variables) {
   if (!empty($description)) {
     $output .= '<div class="faq-description">' . $description . "</div>\n";
   }
-  if (variable_get('faq_show_expand_all', FALSE)) {
+  if (config_get('faq.settings', 'faq_show_expand_all')) {
     $output .= '<div id="faq-expand-all">';
     $output .= '<a class="faq-expand-all-link" href="#faq-expand-all-link">[' . t('expand all') . ']</a>';
     $output .= '<a class="faq-collapse-all-link" href="#faq-collapse-all-link">[' . t('collapse all') . ']</a>';
@@ -1840,7 +1820,7 @@ function theme_field_detailed_question($variables) {
  */
 function theme_faq_draggable_question_order_table($variables) {
   $form = $variables['form'];
-  drupal_add_tabledrag('question-sort', 'order', 'sibling', 'sort');
+  backdrop_add_tabledrag('question-sort', 'order', 'sibling', 'sort');
   $header = array('', t('Question'), '', t('Sort'));
   $rows = array();
   foreach (element_children($form) as $key) {
@@ -1848,9 +1828,9 @@ function theme_faq_draggable_question_order_table($variables) {
     $form[$key]['sort']['#attributes']['class'] = array('sort');
 
     $row = array('');
-    $row[] = drupal_render($form[$key]['title']);
-    $row[] = drupal_render($form[$key]['nid']);
-    $row[] = drupal_render($form[$key]['sort']);
+    $row[] = backdrop_render($form[$key]['title']);
+    $row[] = backdrop_render($form[$key]['nid']);
+    $row[] = backdrop_render($form[$key]['sort']);
     $rows[] = array(
       'data' => $row,
       'class' => array('draggable'),
@@ -1858,12 +1838,12 @@ function theme_faq_draggable_question_order_table($variables) {
   }
   $output = theme('table',
     array(
-      'header' => $header,
-      'rows' => $rows,
-      'attributes' => array('id' => 'question-sort'),
-    )
+    'header' => $header,
+    'rows' => $rows,
+    'attributes' => array('id' => 'question-sort'),
+  )
   );
-  $output .= drupal_render_children($form);
+  $output .= backdrop_render_children($form);
   return $output;
 }
 
@@ -1871,5 +1851,5 @@ function theme_faq_draggable_question_order_table($variables) {
  * Helper to get the path for the faq page.
  */
 function _faq_path() {
-  return variable_get('faq_path', 'faq-page');
+  return config_get('faq.settings', 'faq_path');
 }

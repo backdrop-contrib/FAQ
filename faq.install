@@ -82,13 +82,34 @@ function faq_schema() {
  * Inserts the FAQ module's schema in the SQL database.
  */
 function faq_install() {
-  variable_set('node_type_faq', array('status'));
+  $config = config('faq.settings');
+  $config->set('node_type_faq', array('status'));
+  $config->set('faq_description_format', filter_fallback_format());
+  $config->set('faq_description', array('value' => '', 'format' => filter_fallback_format()));
+  $config->save();
+
   $t = get_t();
 
   // Ensure the FAQ node type is available.
-  node_types_rebuild();
-  $types = node_type_get_types();
-  node_add_body_field($types['faq']);
+  $faq_node_type = array(
+    'type' => 'faq',
+    'name' => t('FAQ'),
+    'base' => 'faq',
+    'description' => t('A frequently asked question and its answer.'),
+    'has_title' => TRUE,
+    'title_label' => t('Question'),
+    'custom' => 1,
+    'modified' => 1,
+    'locked' => 0,
+    'is_new' => TRUE,
+    'settings' => array(
+      'promote_enabled' => FALSE,
+    ),
+  );
+
+  $faq_node_type = node_type_set_defaults($faq_node_type);
+  node_type_save($faq_node_type);
+  node_add_body_field($faq_node_type);
 
   // Change the default label on the body field.
   $body_instance = field_info_instance('node', 'body', 'faq');
@@ -105,50 +126,9 @@ function faq_install() {
 /**
  * Implements hook_uninstall().
  *
- * Remove the variables, nodes and schema corresponding to the FAQ module.
+ * Remove the nodes and schema corresponding to the FAQ module.
  */
 function faq_uninstall() {
-  // Delete the variables we created.
-  // General settings.
-  variable_del('faq_title');
-  variable_del('faq_description');
-  variable_del('faq_path');
-  // Questions page.
-  variable_del('faq_display');
-  variable_del('faq_question_listing');
-  variable_del('faq_qa_mark');
-  variable_del('faq_question_label');
-  variable_del('faq_answer_label');
-  variable_del('faq_question_length');
-  variable_del('faq_hide_qa_accordion');
-  variable_del('faq_show_expand_all');
-  variable_del('faq_use_teaser');
-  variable_del('faq_show_node_links');
-  variable_del('faq_back_to_top');
-  variable_del('faq_disable_node_links');
-  variable_del('faq_default_sorting');
-  variable_del('faq_question_long_form');
-  // Categories page.
-  variable_del('faq_use_categories');
-  variable_del('faq_category_display');
-  variable_del('faq_category_listing');
-  variable_del('faq_category_hide_qa_accordion');
-  variable_del('faq_count');
-  variable_del('faq_answer_category_name');
-  variable_del('faq_group_questions_top');
-  variable_del('faq_hide_child_terms');
-  variable_del('faq_show_term_page_children');
-  variable_del('faq_omit_vocabulary');
-  variable_del('faq_enable_term_links');
-  // Block settings.
-  variable_del('faq_block_recent_faq_count');
-  variable_del('faq_block_random_faq_count');
-  // Custom breadcrumbs control.
-  variable_del('faq_custom_breadcrumbs');
-
-  // Deprecated.
-  variable_del('faq_more_link');
-
   // Remove content type and the fields created.
   $faq_type = 'faq';
   $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
@@ -180,247 +160,6 @@ function faq_uninstall() {
   cache_clear_all('*', 'cache_filter', TRUE);
   cache_clear_all('*', 'cache_menu', TRUE);
   cache_clear_all('*', 'cache_page', TRUE);
-}
-
-/**
- * Create 'faq_weights' table in order to upgrade from older installations.
- */
-function faq_update_1() {
-  $schema['faq_weights'] = array(
-    'description' => 'A table containing the weight of each faq node by category.',
-    'fields' => array(
-      'tid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'nid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'weight' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('nid', 'tid'),
-  );
-
-  $ret = array();
-  db_create_table('faq_weights', $schema['faq_weights']);
-
-  return t('FAQ weighting table created.');
-}
-
-/**
- * Create 'faq_questions' table in order to upgrade from older installations.
- */
-function faq_update_2() {
-  $schema['faq_questions'] = array(
-    'description' => 'A table containing the long question text of each faq node revision.',
-    'fields' => array(
-      'nid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The primary identifier for a node.',
-      ),
-      'vid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The primary identifier for a node revision.',
-      ),
-      'question' => array(
-        'type' => 'text',
-        'size' => 'normal',
-        'not null' => TRUE,
-        'description' => 'The faq long question text.',
-      ),
-    ),
-    'primary key' => array('nid', 'vid'),
-  );
-
-  db_create_table('faq_questions', $schema['faq_questions']);
-
-  // Pre-populate the questions table from the existing nodes.
-  $select = db_select('node', 'n');
-  $select->innerJoin('node_revisions', 'r', 'n.nid = %alias.nid');
-  $select
-    ->fields('r', array('nid', 'vid', 'title'))
-    ->condition('n.type', 'faq');
-
-  db_insert('faq_questions')
-    ->fields(array('nid', 'vid', 'question'))
-    ->from($select)
-    ->execute();
-
-  return t('FAQ Questions table created.');
-}
-
-/**
- * Add the 'detailed_question' column to the 'faq_questions' table.
- */
-function faq_update_6003() {
-  $ret = array();
-  db_add_field('faq_questions', 'detailed_question',
-    array(
-      'type' => 'text',
-      'size' => 'normal',
-      'not null' => TRUE,
-    )
-  );
-
-  db_update('faq_questions')
-    ->expression('detailed_question', 'question')
-    ->execute();
-
-  return t('Detailed question column added.  Existing nodes have been given the same detailed question as current question.');
-}
-
-/**
- * Make'detailed_question' column nullable.
- */
-function faq_update_7000() {
-  db_change_field('faq_questions', 'detailed_question', 'detailed_question',
-    array(
-      'type' => 'text',
-      'size' => 'normal',
-      'not null' => FALSE,
-    )
-  );
-  return t('Detailed question field can now be null.');
-}
-
-/**
- * Delete obsolete variables.
- */
-function faq_update_7001() {
-  variable_del('faq_block_recent_faq_count');
-  variable_del('faq_block_random_faq_count');
-  variable_del('faq_enable_term_links');
-  return t('Deleted obsolete variables.');
-}
-
-/**
- * Convert old-style detailed questions to new fields.
- */
-function faq_update_7002(&$sandbox) {
-  // Number of nodes to update each pass.
-  define('BATCH_SIZE_7002', '5');
-
-  // Do this the first time.
-  if (!isset($sandbox['progress'])) {
-
-    // Initialize sandbox structure for multi-pass update.
-    $sandbox['progress'] = 0;
-    $sandbox['current_idx'] = 0;
-
-    // Get faq nodes and run the query as user 1.
-    $query = new EntityFieldQuery();
-    $query->entityCondition('entity_type', 'node')
-    ->entityCondition('bundle', 'faq')
-    ->addMetaData('account', user_load(1));
-    $result = $query->execute();
-
-    if (isset($result['node'])) {
-      $sandbox['faq_items_nids'] = array_keys($result['node']);
-      $sandbox['max'] = count($sandbox['faq_items_nids']);
-    }
-    else {
-      $sandbox['faq_items_nids'] = array();
-      $sandbox['max'] = 0;
-    }
-
-    // Add the detailed question field.
-    _faq_add_custom_fields();
-
-    // Adjust the weight of the field so that it is above the answer (body).
-    _faq_shift_fields_down();
-  }
-
-  $count = 0;
-  // Convert old-style detailed questions to new full field.
-  while (($nid = $sandbox['faq_items_nids'][$sandbox['current_idx']]) && $count < BATCH_SIZE_7002) {
-
-    // Load the full node to be updated.
-    $node = node_load($nid);
-
-    // Load the detailed question.
-    $dq = isset($node->detailed_question) ? $node->detailed_question : '';
-    if ($dq == '') {
-      $select = db_select('faq_questions', 'f');
-      $dq = $select->condition('f.nid', $node->nid)->fields('f', array('detailed_question'))->execute()->fetchField();
-    }
-
-    // Get the default text filter format from DB as this might be integer if upgraded site or tekststring if new D7 site.
-    // Default filter format: Filtered HTML.
-    $filter_formats = filter_formats();
-    $filter_formats_keys = array_keys($filter_formats);
-    $filter_format = reset($filter_formats_keys);
-
-    // Get the language(s) from the body, making sure we have the same set for detailed question too.
-    $langs = array_keys($node->body);
-
-    // Add proper taxonomy fields.
-    $txonselect = db_select('taxonomy_index', 't');
-    $taxres = $txonselect->fields('t', array('tid'))->condition('t.nid', $node->nid)->execute();
-    foreach ($taxres as $taxon) {
-      $term = taxonomy_term_load($taxon->tid);
-      $vocab = taxonomy_vocabulary_load($term->vid);
-
-      foreach ($langs as $language) {
-        // Find out if there is a field added with the vocabulary of this term.
-        if (isset($node->{$vocab->module . "_" . $vocab->machine_name})) {
-          $node->{$vocab->module . "_" . $vocab->machine_name}[$language][$term->tid] = (array) $term;
-        }
-      }
-    }
-
-    // Add detailed question field for all languages.
-    foreach ($langs as $language) {
-      $node->field_detailed_question[$language][0]['value'] = $dq;
-      $node->field_detailed_question[$language][0]['format'] = $filter_format;
-      $node->field_detailed_question[$language][0]['safe_value'] = check_markup($dq, $filter_format, $language);
-    }
-
-    // Save resulting node.
-    node_save($node);
-
-    // Should not be more than BATCH_SIZE_7002.
-    $count++;
-    // Progress counter.
-    $sandbox['progress']++;
-    // Node array index pointer.
-    $sandbox['current_idx']++;
-  }
-
-  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
-
-  return t('Custom field added, @count questions converted into fields.', array('@count' => $sandbox['max'] + 1));
-}
-
-/**
- * Convert faq page description to array.
- */
-function faq_update_7003(&$sandbox) {
-  $description = variable_get('faq_description', '');
-  $format = variable_get('faq_description_format', filter_fallback_format());
-  $faq_description = array(
-    'value' => $description,
-    'format' => $format,
-  );
-  variable_set('faq_description', $faq_description);
-  variable_del('faq_description_format');
-
-  return t('Converted faq page description to array.');
 }
 
 /**
@@ -609,4 +348,80 @@ function _faq_shift_fields_down() {
   $instance['display']['default']['weight'] = $body_default_weight;
   $instance['display']['teaser']['weight'] = $body_teaser_weight;
   field_update_instance($instance);
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function faq_update_last_removed() {
+  return 7003;
+}
+
+/**
+ * Migrate faq variables to config.
+ */
+function faq_update_1000() {
+  $config = config('faq.settings');
+  $config->set('faq_title', update_variable_get('faq_title', 'Frequently Asked Questions'));
+  $config->set('faq_description', update_variable_get('faq_description', array('value' => '', 'format' => filter_fallback_format())));
+  $config->set('faq_custom_breadcrumbs', update_variable_get('faq_custom_breadcrumbs', TRUE));
+  $config->set('faq_category_display', update_variable_get('faq_category_display', 'categories_inline'));
+  $config->set('faq_use_categories', update_variable_get('faq_use_categories', array()));
+  $config->set('faq_display', update_variable_get('faq_display', 'questions_top'));
+  $config->set('faq_question_listing', update_variable_get('faq_question_listing', 'ul'));
+  $config->set('faq_qa_mark', update_variable_get('faq_qa_mark', array()));
+  $config->set('faq_question_label', update_variable_get('faq_question_label', 'Q:'));
+  $config->set('faq_answer_label', update_variable_get('faq_answer_label', 'A:'));
+  $config->set('faq_question_long_form', update_variable_get('faq_question_long_form', '1'));
+  $config->set('faq_question_length', update_variable_get('faq_question_length', 'short'));
+  $config->set('faq_hide_qa_accordion', update_variable_get('faq_hide_qa_accordion', array()));
+  $config->set('faq_show_expand_all', update_variable_get('faq_show_expand_all', array()));
+  $config->set('faq_use_teaser', update_variable_get('faq_use_teaser', array()));
+  $config->set('faq_show_node_links', update_variable_get('faq_show_node_links', array()));
+  $config->set('faq_back_to_top', update_variable_get('faq_back_to_top', 'Back to Top'));
+  $config->set('faq_disable_node_links', update_variable_get('faq_disable_node_links', array()));
+  $config->set('faq_default_sorting', update_variable_get('faq_default_sorting', 'DESC'));
+  $config->set('faq_omit_vocabulary', update_variable_get('faq_omit_vocabulary', array()));
+  $config->set('faq_category_listing', update_variable_get('faq_category_listing', 'ul'));
+  $config->set('faq_category_hide_qa_accordion', update_variable_get('faq_category_hide_qa_accordion', array()));
+  $config->set('faq_count', update_variable_get('faq_count', array()));
+  $config->set('faq_answer_category_name', update_variable_get('faq_answer_category_name', array()));
+  $config->set('faq_group_questions_top', update_variable_get('faq_group_questions_top', array()));
+  $config->set('faq_hide_child_terms', update_variable_get('faq_hide_child_terms', array()));
+  $config->set('faq_show_term_page_children', update_variable_get('faq_show_term_page_children', array()));
+  $config->set('faq_description_format', update_variable_get('faq_description_format', filter_fallback_format()));
+  $config->set('faq_auto_generate_alias', update_variable_get('faq_auto_generate_alias', TRUE));
+  $config->set('faq_path', update_variable_get('faq_path', 'faq-page'));
+  $config->save();
+
+  update_variable_del('faq_title');
+  update_variable_del('faq_description');
+  update_variable_del('faq_custom_breadcrumbs');
+  update_variable_del('faq_category_display');
+  update_variable_del('faq_use_categories');
+  update_variable_del('faq_display');
+  update_variable_del('faq_question_listing');
+  update_variable_del('faq_qa_mark');
+  update_variable_del('faq_question_label');
+  update_variable_del('faq_answer_label');
+  update_variable_del('faq_question_long_form');
+  update_variable_del('faq_question_length');
+  update_variable_del('faq_hide_qa_accordion');
+  update_variable_del('faq_show_expand_all');
+  update_variable_del('faq_use_teaser');
+  update_variable_del('faq_show_node_links');
+  update_variable_del('faq_back_to_top');
+  update_variable_del('faq_disable_node_links');
+  update_variable_del('faq_default_sorting');
+  update_variable_del('faq_omit_vocabulary');
+  update_variable_del('faq_category_listing');
+  update_variable_del('faq_category_hide_qa_accordion');
+  update_variable_del('faq_count');
+  update_variable_del('faq_answer_category_name');
+  update_variable_del('faq_group_questions_top');
+  update_variable_del('faq_hide_child_terms');
+  update_variable_del('faq_show_term_page_children');
+  update_variable_del('faq_description_format');
+  update_variable_del('faq_auto_generate_alias');
+  update_variable_del('faq_path');
 }

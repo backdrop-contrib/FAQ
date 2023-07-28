@@ -9,23 +9,13 @@
 /**
  * Base class that is extended by test cases
  */
-class FaqTestCase extends DrupalWebTestCase {
+class FaqTestCase extends BackdropWebTestCase {
 
 
-  protected $admin_user, $faq_user;
-  protected $taxonomy;
+  protected $admin_user, $faq_user, $afaq_user;
+  protected $taxonomy, $vocabulary;
   protected $term, $faq1, $faq2;
-
-  /**
-   * Implementation of getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('FAQ functionality'),
-      'description' => t('Base class. No tests here.'),
-      'group' => t('Frequently Asked Questions'),
-    );
-  }
+  protected $instance;
 
   /**
    * Implementation of setUp().
@@ -33,26 +23,33 @@ class FaqTestCase extends DrupalWebTestCase {
   function setUp() {
 
     // Install FAQ Module.
+
     parent::setUp('taxonomy', 'faq');
 
     // Create and log in user with administer taxonomy permissions.
-    $this->admin_user = $this->drupalCreateUser(array('administer taxonomy', 'administer faq', 'administer faq order', 'administer blocks'));
-    $this->drupalLogin($this->admin_user);
 
-    $this->faq_user = $this->drupalCreateUser(array('create faq content', 'edit any faq content', 'delete any faq content', 'view faq page', 'access content'));
+    $this->admin_user = $this->backdropCreateUser(array('administer taxonomy', 'administer faq', 'administer faq order', 'administer blocks'));
+    $this->backdropLogin($this->admin_user);
+
+    $this->faq_user = $this->backdropCreateUser(array('create faq content', 'edit any faq content', 'delete any faq content', 'view faq page', 'access content'));
 
     // Set up the vocab and terms.
+
     $this->setupTaxonomy();
 
     // Categorize questions.
-    $this->drupalPost('admin/config/content/faq/categories', array('faq_use_categories' => '1'), t('Save configuration'));
+
+    $this->backdropPost('admin/config/content/faq/categories', array('faq_use_categories' => '1'), t('Save configuration'));
 
     // Set answer_user as default expert.
+
     $roles = $this->faq_user->roles;
     end($roles); // Set to last role (the unique one)
 
+
     // Start all tests logged out.
-    $this->drupalLogout();
+
+    $this->backdropLogout();
 
   }
 
@@ -62,6 +59,7 @@ class FaqTestCase extends DrupalWebTestCase {
   function tearDown() {
 
     // Things to tidy up like vars and stuff
+
     parent::tearDown();
   }
 
@@ -89,7 +87,8 @@ class FaqTestCase extends DrupalWebTestCase {
    */
   function faqVerifyNoAccess($url) {
     // Test that page returns 403 Access Denied
-    $this->drupalGet($url);
+
+    $this->backdropGet($url);
     $this->assertResponse(403);
   }
 
@@ -99,13 +98,13 @@ class FaqTestCase extends DrupalWebTestCase {
    */
   function setupTaxonomy() {
     // Create vocabulary.
-    $this->vocabulary = $vocabulary = new stdClass();
-    $vocabulary->name = $this->randomName(8);
-    $vocabulary->description = $this->randomName(64);
-    $vocabulary->machine_name = drupal_strtolower($this->randomName());
-    $vocabulary->help = '';
-    $vocabulary->nodes = array('faq' => 'faq');
-    $vocabulary->weight = mt_rand(0, 10);
+    $vocabulary = new TaxonomyVocabulary(array(
+      'name' => $this->randomName(8),
+      'machine_name' => backdrop_strtolower($this->randomName()),
+      'description' => $this->randomName(64),
+      'nodes' => array('faq' => 'faq'),
+      'weight' => mt_rand(0, 10),
+    ));
     taxonomy_vocabulary_save($vocabulary);
 
     $field = array(
@@ -129,7 +128,6 @@ class FaqTestCase extends DrupalWebTestCase {
       'entity_type' => 'node',
       'widget' => array(
         'type' => 'taxonomy_autocomplete',
-
       ),
       'display' => array(
         'default' => array(
@@ -140,13 +138,13 @@ class FaqTestCase extends DrupalWebTestCase {
     field_create_instance($this->instance);
 
     // Add term
+
     // Click the last occurrence of the link.
-    $this->term = $term = new stdClass();
-    $term->name = $this->randomName(8);
-    $term->description = $this->randomName(64);
-    // Use the first available text format.
-    $term->format = db_query_range('SELECT format FROM {filter_format}', 0, 1)->fetchField();
-    $term->vid = $vocabulary->vid;
+    $term = entity_create('taxonomy_term', array(
+    'name' => $this->randomName(8),
+    'vocabulary' => $vocabulary->machine_name,
+    'description' => $this->randomName(64),
+  ));
     taxonomy_term_save($term);
   }
 
@@ -158,34 +156,27 @@ class FaqTestCase extends DrupalWebTestCase {
 
 class FaqAccessTestClass extends FaqTestCase {
 
-  /**
-   * Implementation of getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('Access to FAQ pages'),
-      'description' => t('Access to pages by anonymous user and logged in user with rights.'),
-      'group' => t('Frequently Asked Questions'),
-    );
-  }
-
   function testFaqAccess() {
 
     // Verify that anonymous user has no access to the faq page
+
     $this->faqVerifyNoAccess(_faq_path());
 
     // Create and login user
-    $normal_user = $this->drupalCreateUser();
-    $this->drupalLogin($normal_user);
-    // Verify that logged in user has no access to the faq page
-    $this->faqVerifyNoAccess(_faq_path());
-    $this->drupalLogout();
 
-    $view_faq_user = $this->drupalCreateUser(array('view faq page'));
-    $this->drupalLogin($view_faq_user);
+    $normal_user = $this->backdropCreateUser();
+    $this->backdropLogin($normal_user);
+    // Verify that logged in user has no access to the faq page
+
+    $this->faqVerifyNoAccess(_faq_path());
+    $this->backdropLogout();
+
+    $view_faq_user = $this->backdropCreateUser(array('view faq page'));
+    $this->backdropLogin($view_faq_user);
 
     // Verify that the faq page is visible and available but empty
-    $this->drupalGet(_faq_path());
+
+    $this->backdropGet(_faq_path());
     $this->assertText(t('Frequently Asked Questions'), t('FAQ page is available for view faq page permissions.'));
 
   }
@@ -195,17 +186,6 @@ class FaqAccessTestClass extends FaqTestCase {
 class CreateFaqTestCase extends FaqTestCase {
 
   /**
-   * Implementation of getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('Create FAQ node'),
-      'description' => t('Add, edit and delete FAQ nodes when FAQ module is enabled.'),
-      'group' => t('Frequently Asked Questions'),
-    );
-  }
-
-  /**
    * Test creating a FAQ node
    *
    * This test creates a faq with detailed question shown and labeled questions and answers
@@ -213,91 +193,111 @@ class CreateFaqTestCase extends FaqTestCase {
   function testFaqCreate() {
 
     // Create and log in user with create FAQ permissions
-    $this->drupalLogin($this->admin_user);
-    // Show the detailed question
-    $this->drupalGet('admin/config/content/faq/questions');
-    // Set faq to allow long question text and labeled questions and answers
-    $this->drupalPost('admin/config/content/faq/questions', array('faq_question_long_form' => '1', 'faq_qa_mark' => '1'), t('Save configuration'));
-    $this->drupalPost('admin/config/content/faq/questions', array('faq_question_length' => 'both'), t('Save configuration'));
 
-    $this->afaq_user = $this->drupalCreateUser(array('create faq content', 'view faq page'));
-    $this->drupalLogin($this->afaq_user);
+    $this->backdropLogin($this->admin_user);
+    // Show the detailed question
+
+    $this->backdropGet('admin/config/content/faq/questions');
+    // Set faq to allow long question text and labeled questions and answers
+
+    $this->backdropPost('admin/config/content/faq/questions', array('faq_question_long_form' => '1', 'faq_qa_mark' => '1'), t('Save configuration'));
+    $this->backdropPost('admin/config/content/faq/questions', array('faq_question_length' => 'both'), t('Save configuration'));
+
+    $this->afaq_user = $this->backdropCreateUser(array('create faq content', 'view faq page'));
+    $this->backdropLogin($this->afaq_user);
 
     // Verify that the faq page is visible and available but empty
-    $this->drupalGet(_faq_path());
+
+    $this->backdropGet(_faq_path());
     $this->assertText(t('Frequently Asked Questions'), t('FAQ page is available for view faq page permissions.'));
 
     // Fill in the Create FAQ node 1 form and post it
+
     $langcode = LANGUAGE_NONE;
     $this->faq1 = array();
-    $this->faq1['title'] = 'faq1_'. $this->randomName(8);
-    $this->faq1[$this->instance['field_name'] . '[' . $langcode .']'] = $this->term->name;
+    $this->faq1['title'] = 'faq1_' . $this->randomName(8);
+    $this->faq1[$this->instance['field_name'] . '[' . $langcode . ']'] = $this->term->name;
     $this->faq1["field_detailed_question[$langcode][0][value]"] = $this->randomName(16);
     $this->faq1["body[$langcode][0][value]"] = $this->randomName(16);
-    $this->drupalPost('node/add/faq', $this->faq1, t('Save'));
+    $this->backdropPost('node/add/faq', $this->faq1, t('Save'));
 
 
     // Check that new FAQ node has actually been created
+
     $this->assertText(t('FAQ @title has been created.', array('@title' => $this->faq1['title'])));
 
     // Check that faq is found on the correct taxonomy term page too
-    $this->drupalGet('taxonomy/term/' . $this->term->tid);
+
+    $this->backdropGet('taxonomy/term/' . $this->term->tid);
     $this->assertText(t('@title', array('@title' => $this->faq1['title'])));
 
     // Fill in the Create FAQ node 2 form and post it
+
     $this->faq2 = array();
-    $this->faq2['title'] = 'faq2_'. $this->randomName(8);
-    $this->faq2[$this->instance['field_name'] . '[' . $langcode .']'] = $this->randomName(8); // Add new term
+    $this->faq2['title'] = 'faq2_' . $this->randomName(8);
+    $this->faq2[$this->instance['field_name'] . '[' . $langcode . ']'] = $this->randomName(8); // Add new term
+
     $this->faq2["field_detailed_question[$langcode][0][value]"] = $this->randomName(16);
     $this->faq2["body[$langcode][0][value]"] = $this->randomName(16);
-    $this->drupalPost('node/add/faq', $this->faq2, t('Save'));
+    $this->backdropPost('node/add/faq', $this->faq2, t('Save'));
 
     // Check that new FAQ node has actually been created
+
     $this->assertText(t('FAQ @title has been created.', array('@title' => $this->faq2['title'])));
 
 
     // New user
-    $this->drupalLogout();
+
+    $this->backdropLogout();
 
 
     // Verify that logged in user has no access to the faq page
+
     $this->faqVerifyNoAccess(_faq_path());
 
     // Check that the FAQ page is available and that the correct term is listed as grouping for the new FAQ node
-    $view_faq_user = $this->drupalCreateUser(array('view faq page'));
-    $this->drupalLogin($view_faq_user);
-    $this->drupalGet(_faq_path());
+
+    $view_faq_user = $this->backdropCreateUser(array('view faq page'));
+    $this->backdropLogin($view_faq_user);
+    $this->backdropGet(_faq_path());
     $this->assertText(t('Frequently Asked Questions'), t('FAQ page is available for view faq page permissions.'));
     $this->assertText($this->faq1['title'], t('Created FAQ node 1 available on FAQ page.'));
-    $this->assertText($this->faq1[$this->instance['field_name'] . '[' . $langcode .']'], t('Term for node 1 available on FAQ page.'));
+    $this->assertText($this->faq1[$this->instance['field_name'] . '[' . $langcode . ']'], t('Term for node 1 available on FAQ page.'));
     $this->assertText($this->faq2['title'], t('Created FAQ node 2 available on FAQ page.'));
-    $this->assertText($this->faq2[$this->instance['field_name'] . '[' . $langcode .']'], t('Term for node 2 available on FAQ page.'));
+    $this->assertText($this->faq2[$this->instance['field_name'] . '[' . $langcode . ']'], t('Term for node 2 available on FAQ page.'));
 
     // Navigate to FAQ node created on FAQ page
+
     $this->clickLink(t($this->faq1['title']));
     $this->assertText(t($this->faq1["field_detailed_question[$langcode][0][value]"]), t('Detailed question visible')); // Dependant on the question setting
+
     $this->assertText(t($this->faq1["body[$langcode][0][value]"]), t('Answer visible'));
 
     // Enable categorisation of FAQ nodes
+
     // Create and log in user with create and administer FAQ permissions
-    $this->admin_user = $this->drupalCreateUser(array('create faq content', 'view faq page', 'administer faq'));
-    $this->drupalLogin($this->admin_user);
+
+    $this->admin_user = $this->backdropCreateUser(array('create faq content', 'view faq page', 'administer faq'));
+    $this->backdropLogin($this->admin_user);
 
     // faq_use_categories
+
     $faqcfg = array();
     $faqcfg['faq_use_categories'] = '1'; // Enable categorised FAQs
-    $this->drupalPost('admin/config/content/faq/categories', $faqcfg, t('Save configuration'));
-    $this->drupalLogout();
 
-    $this->drupalLogin($view_faq_user);
-    $this->drupalGet(_faq_path());
+    $this->backdropPost('admin/config/content/faq/categories', $faqcfg, t('Save configuration'));
+    $this->backdropLogout();
+
+    $this->backdropLogin($view_faq_user);
+    $this->backdropGet(_faq_path());
     $this->assertText(t('Frequently Asked Questions'), t('FAQ page is available for view faq page permissions.'));
     $this->assertText($this->faq1['title'], t('Created FAQ node 1 available on FAQ page.'));
-    $this->assertText($this->faq1[$this->instance['field_name'] . '[' . $langcode .']'], t('Term for node 1 not available on FAQ page.'));
+    $this->assertText($this->faq1[$this->instance['field_name'] . '[' . $langcode . ']'], t('Term for node 1 not available on FAQ page.'));
     $this->assertText($this->faq2['title'], t('Created FAQ node 2 available on FAQ page.'));
-    $this->assertText($this->faq2[$this->instance['field_name'] . '[' . $langcode .']'], t('Term for node 2 not available on FAQ page.'));
+    $this->assertText($this->faq2[$this->instance['field_name'] . '[' . $langcode . ']'], t('Term for node 2 not available on FAQ page.'));
 
     // TODO: Add update and Delete of FAQ nodes
+
 
   }
 
@@ -307,75 +307,82 @@ class CreateFaqTestCase extends FaqTestCase {
 class CRAUDFaqTestCase extends FaqTestCase {
 
   /**
-   * Implementation of getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('CRUD Question'),
-      'description' => t('Create, read, update and delete a question'),
-      'group' => t('Frequently Asked Questions'),
-    );
-  }
-
-  /**
    * Test creating an FAQ and verify its status
    */
   public function testFaqCreate() {
 
     // Verify that logged in user has no access to the faq page
+
     $this->faqVerifyNoAccess(_faq_path());
 
     // Log in user with create FAQ permissions
-    $this->drupalLogin($this->faq_user);
+
+    $this->backdropLogin($this->faq_user);
 
     // Create a FAQ node.
+
     $edit = array();
     $edit['title'] = $this->randomName(8);
-    $edit[$this->instance['field_name'] . '['. LANGUAGE_NONE .']'] = $this->randomName(8);
-    $edit['field_detailed_question['. LANGUAGE_NONE .'][0][value]'] = $this->randomName(64);
-    $edit['body['. LANGUAGE_NONE .'][0][value]'] = $this->randomString(264);
-    $this->drupalPost('node/add/faq', $edit, t('Save'));
+    $edit[$this->instance['field_name'] . '[' . LANGUAGE_NONE . ']'] = $this->randomName(8);
+    $edit['field_detailed_question[' . LANGUAGE_NONE . '][0][value]'] = $this->randomName(64);
+    $edit['body[' . LANGUAGE_NONE . '][0][value]'] = $this->randomString(264);
+    $this->backdropPost('node/add/faq', $edit, t('Save'));
     $this->assertText(t('FAQ @title has been created.', array('@title' => $edit['title'])));
 
     // Check status for FAQ node - should be published
-    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    $node = $this->backdropGetNodeByTitle($edit['title']);
     $this->assertTrue($node->status);
 
-    $this->drupalLogout();
+    $this->backdropLogout();
 
     // Verify that anonymous user has no access to the unanswered node display
-    //    $this->faqVerifyNoAccess('node/' . $node->nid);
-    $this->drupalGet('node/' . $node->nid . '/edit'); // Open edit page with node
-    //    $this->assertResponse(200);
+
+//    $this->faqVerifyNoAccess('node/' . $node->nid);
+
+    $this->backdropGet('node/' . $node->nid . '/edit'); // Open edit page with node
+
+//    $this->assertResponse(200);
+
 
     // Create and log in user with view FAQ permissions
-    $faq_view_user = $this->drupalCreateUser(array('view faq page'));
-    $this->drupalLogin($faq_view_user);
+
+    $faq_view_user = $this->backdropCreateUser(array('view faq page'));
+    $this->backdropLogin($faq_view_user);
 
     // Verify visibility on faq page
-    $this->drupalGet(_faq_path()); // Load faq page
+
+    $this->backdropGet(_faq_path()); // Load faq page
+
     $this->assertText($edit['title']); // Node should be listed here
-    $this->drupalGet('node/' . $node->nid); // It should also be possible to open the node directly
+
+    $this->backdropGet('node/' . $node->nid); // It should also be possible to open the node directly
+
 
     // Update FAQ
+
     // Log in user with answer question. Must also have edit any faq content and view faq page permissions.
-    $this->drupalLogin($this->faq_user);
+
+    $this->backdropLogin($this->faq_user);
     $edit2['title'] = 'title-' . $this->randomName(8);
-    $edit2['body['. LANGUAGE_NONE .'][0][value]']  = 'body-' . $this->randomName(64);
-    $this->drupalPost('node/' . $node->nid . '/edit', $edit2, t('Save'));
+    $edit2['body[' . LANGUAGE_NONE . '][0][value]']  = 'body-' . $this->randomName(64);
+    $this->backdropPost('node/' . $node->nid . '/edit', $edit2, t('Save'));
     $this->assertText(t('FAQ @title has been updated.', array('@title' => $edit2['title'])));
     $this->assertText($edit2['title'], 'Title has changed');
-    $this->assertText($edit2['body['. LANGUAGE_NONE .'][0][value]'], 'Body has changed');
+    $this->assertText($edit2['body[' . LANGUAGE_NONE . '][0][value]'], 'Body has changed');
 
     // Delete FAQ
+
     // Try deleting faq by edit faq permission
-    $this->drupalPost('node/' . $node->nid . '/edit', array(), t('Delete'));
+
+    $this->backdropPost('node/' . $node->nid . '/edit', array(), t('Delete'));
 
     // Log in user with delete FAQ permissions
-    $this->drupalLogin($this->admin_user);
-    $this->drupalPost('node/' . $node->nid . '/edit', array(), t('Delete'));
+
+    $this->backdropLogin($this->admin_user);
+    $this->backdropPost('node/' . $node->nid . '/edit', array(), t('Delete'));
     $this->assertText(t('Are you sure you want to delete @title?', array('@title' => $edit2['title'])));
-    $this->drupalPost('node/' . $node->nid . '/delete', array(), t('Delete'));
+    $this->backdropPost('node/' . $node->nid . '/delete', array(), t('Delete'));
     $this->assertText(t('FAQ @title has been deleted.', array('@title' => $edit2['title'])));
 
   }

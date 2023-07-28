@@ -1,10 +1,10 @@
 
 (function ($) {
 
-  Drupal.behaviors.initFaqModule = {
+  Backdrop.behaviors.initFaqModule = {
     attach: function (context) {
       // Hide/show answer for a question.
-      var faq_hide_qa_accordion = Drupal.settings.faq.faq_hide_qa_accordion;
+      var faq_hide_qa_accordion = Backdrop.settings.faq.faq_hide_qa_accordion;
       $('div.faq-dd-hide-answer', context).addClass("collapsible collapsed");
 
       if (!faq_hide_qa_accordion) {
@@ -51,7 +51,7 @@
             scrollTop: $(this).offset().top
           }, 1);
         }
-        
+
         return false;
       });
 
@@ -61,7 +61,7 @@
       }
 
       // Hide/show q/a for a category.
-      var faq_category_hide_qa_accordion = Drupal.settings.faq.faq_category_hide_qa_accordion;
+      var faq_category_hide_qa_accordion = Backdrop.settings.faq.faq_category_hide_qa_accordion;
       $('div.faq-qa-hide', context).addClass("collapsible collapsed");
       if (!faq_category_hide_qa_accordion) {
         $('div.faq-qa-hide', context).hide();
@@ -89,7 +89,7 @@
             scrollTop: $this.offset().top
           }, 1);
         }
-        
+
         return false;
       });
 

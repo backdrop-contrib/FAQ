@@ -1,0 +1,538 @@
+{
+  "_config_name": "views.view.faq",
+  "name": "faq",
+  "description": "FAQ listings",
+  "tag": "default",
+  "disabled": false,
+  "base_table": "node",
+  "human_name": "FAQ",
+  "core": 7,
+  "display": {
+    "default": {
+      "display_title": "Master",
+      "display_plugin": "default",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": {
+            "query_comment": false
+          }
+        },
+        "title": "FAQ",
+        "use_more": true,
+        "use_more_always": true,
+        "use_more_text": "View all FAQs",
+        "access": {
+          "type": "perm"
+        },
+        "cache": {
+          "type": "none"
+        },
+        "exposed_form": {
+          "type": "basic"
+        },
+        "pager": {
+          "type": "full",
+          "options": {
+            "items_per_page": "10"
+          }
+        },
+        "style_plugin": "default",
+        "row_plugin": "node",
+        "fields": {
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "label": "",
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "word_boundary": 0,
+              "ellipsis": 0,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "link_to_node": 1
+          }
+        },
+        "sorts": {
+          "sticky": {
+            "id": "sticky",
+            "table": "node",
+            "field": "sticky",
+            "order": "DESC"
+          },
+          "created": {
+            "id": "created",
+            "table": "node",
+            "field": "created",
+            "order": "DESC"
+          }
+        },
+        "filters": {
+          "status": {
+            "id": "status",
+            "table": "node",
+            "field": "status",
+            "value": 1,
+            "group": 0,
+            "expose": {
+              "operator": false
+            }
+          },
+          "type": {
+            "id": "type",
+            "table": "node",
+            "field": "type",
+            "value": {
+              "faq": "faq"
+            }
+          },
+          "language": {
+            "id": "language",
+            "table": "node",
+            "field": "language",
+            "value": {
+              "***CURRENT_LANGUAGE***": "***CURRENT_LANGUAGE***",
+              "und": "und"
+            }
+          }
+        }
+      }
+    },
+    "faq_recent": {
+      "display_title": "Block - Recent FAQs",
+      "display_plugin": "block",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "defaults": {
+          "title": false,
+          "use_more": false,
+          "pager": false,
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false
+        },
+        "title": "Recent FAQs",
+        "use_more": true,
+        "use_more_always": true,
+        "use_more_text": "View all FAQs",
+        "pager": {
+          "type": "some",
+          "options": {
+            "items_per_page": "5",
+            "offset": "0"
+          }
+        },
+        "style_plugin": "list",
+        "style_options": {
+          "grouping": ""
+        },
+        "row_plugin": "fields",
+        "block_description": "Recent FAQs"
+      }
+    },
+    "faq_random": {
+      "display_title": "Block - Random FAQs",
+      "display_plugin": "block",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "defaults": {
+          "title": false,
+          "use_more": false,
+          "pager": false,
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false,
+          "sorts": false
+        },
+        "title": "Random FAQs",
+        "use_more": true,
+        "use_more_always": true,
+        "use_more_text": "View all FAQs",
+        "pager": {
+          "type": "some",
+          "options": {
+            "items_per_page": "5",
+            "offset": "0"
+          }
+        },
+        "style_plugin": "list",
+        "row_plugin": "fields",
+        "row_options": {
+          "hide_empty": 0,
+          "default_field_elements": 1
+        },
+        "sorts": {
+          "random": {
+            "id": "random",
+            "table": "views",
+            "field": "random"
+          }
+        },
+        "block_description": "Random FAQs"
+      }
+    },
+    "page": {
+      "display_title": "Page - Questions Inline",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "enabled": false,
+        "path": "faq-questions-inline"
+      }
+    },
+    "page_1": {
+      "display_title": "Page - Questions Top",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "enabled": false,
+        "defaults": {
+          "pager": false,
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false,
+          "fields": false
+        },
+        "pager": {
+          "type": "none",
+          "options": {
+            "offset": "0"
+          }
+        },
+        "style_plugin": "default",
+        "row_plugin": "fields",
+        "row_options": {
+          "hide_empty": 0,
+          "default_field_elements": 1
+        },
+        "fields": {
+          "nid": {
+            "id": "nid",
+            "table": "node",
+            "field": "nid",
+            "label": "",
+            "exclude": true,
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 1,
+              "ellipsis": 1,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "link_to_node": 0
+          },
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "label": "",
+            "alter": {
+              "alter_text": 1,
+              "text": "<h3><a id=\"n[nid]\">[title]</a></h3>",
+              "make_link": 0,
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 0,
+              "ellipsis": 0,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "link_to_node": 0
+          },
+          "body": {
+            "id": "body",
+            "table": "field_data_body",
+            "field": "body",
+            "label": "",
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 1,
+              "ellipsis": 1,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "field_api_classes": 0
+          }
+        },
+        "path": "faq-questions-top"
+      }
+    },
+    "attachment_1": {
+      "display_title": "Attachment - Questions Top",
+      "display_plugin": "attachment",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "enabled": false,
+        "defaults": {
+          "use_more": false,
+          "link_display": false,
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false,
+          "fields": false
+        },
+        "use_more_always": true,
+        "use_more_text": "View all FAQs",
+        "link_display": "page_1",
+        "pager": {
+          "type": "none",
+          "options": {
+            "offset": "0"
+          }
+        },
+        "style_plugin": "list",
+        "row_plugin": "fields",
+        "row_options": {
+          "hide_empty": 0,
+          "default_field_elements": 1
+        },
+        "fields": {
+          "nid": {
+            "id": "nid",
+            "table": "node",
+            "field": "nid",
+            "label": "",
+            "exclude": true,
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 1,
+              "ellipsis": 1,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "link_to_node": 0
+          },
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "label": "",
+            "alter": {
+              "alter_text": 0,
+              "make_link": 1,
+              "path": "faq-questions-top#n[nid]",
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 0,
+              "ellipsis": 0,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "link_to_node": 0
+          }
+        },
+        "displays": {
+          "page_1": "page_1",
+          "default": 0,
+          "page": 0,
+          "block": 0,
+          "block_1": 0
+        },
+        "inherit_exposed_filters": 1
+      }
+    },
+    "page_2": {
+      "display_title": "Page - New Page",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "enabled": false,
+        "defaults": {
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false,
+          "fields": false
+        },
+        "style_plugin": "list",
+        "row_plugin": "fields",
+        "row_options": {
+          "hide_empty": 0,
+          "default_field_elements": 1
+        },
+        "fields": {
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "label": "",
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "word_boundary": 0,
+              "ellipsis": 0,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "link_to_node": 1
+          }
+        },
+        "path": "faq-new-page"
+      }
+    },
+    "page_3": {
+      "display_title": "Page - Categories Inline - New Page",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "enabled": false,
+        "defaults": {
+          "style_plugin": false,
+          "style_options": false,
+          "row_plugin": false,
+          "row_options": false,
+          "fields": false
+        },
+        "style_plugin": "list",
+        "style_options": {
+          "grouping": "field_category"
+        },
+        "row_plugin": "fields",
+        "row_options": {
+          "hide_empty": 0,
+          "default_field_elements": 1
+        },
+        "fields": {
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "label": "",
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "word_boundary": 0,
+              "ellipsis": 0,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "link_to_node": 1
+          },
+          "field_category": {
+            "id": "field_category",
+            "table": "field_data_field_category",
+            "field": "field_category",
+            "label": "",
+            "exclude": true,
+            "alter": {
+              "alter_text": 0,
+              "make_link": 0,
+              "absolute": 0,
+              "external": 0,
+              "replace_spaces": 0,
+              "trim_whitespace": 0,
+              "nl2br": 0,
+              "word_boundary": 1,
+              "ellipsis": 1,
+              "strip_tags": 0,
+              "trim": 0,
+              "html": 0
+            },
+            "element_label_colon": false,
+            "element_default_classes": 1,
+            "hide_empty": 0,
+            "empty_zero": 0,
+            "hide_alter_empty": 0,
+            "type": "taxonomy_term_reference_plain",
+            "field_api_classes": 0
+          }
+        },
+        "path": "faq-categories-inline-new-page"
+      }
+    }
+  }
+}

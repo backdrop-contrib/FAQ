@@ -19,17 +19,17 @@ function template_preprocess_faq_new_page(&$variables) {
     $items[] = l($node->title, "node/$node->nid");
   }
 
-  $list_style = variable_get('faq_question_listing', 'ul');
+  $list_style = config_get('faq.settings', 'faq_question_listing');
   $variables['list_style'] = $list_style;
   $variables['list_items'] = $items;
 
   $variables['list'] = theme('item_list',
     array(
-      'items' => $items,
-      'title' => NULL,
-      'type' => $list_style,
-      'attributes' => array("class" => "faq-question-listing"),
-    )
+    'items' => $items,
+    'title' => NULL,
+    'type' => $list_style,
+    'attributes' => array("class" => "faq-question-listing"),
+  )
   );
 }
 
@@ -40,6 +40,7 @@ function template_preprocess_faq_new_page(&$variables) {
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_category_new_page(&$variables) {
+  $config = config('faq.settings');
   $data = $variables['data'];
   $category_display = $variables['category_display'];
   $term = $variables['term'];
@@ -48,9 +49,9 @@ function template_preprocess_faq_category_new_page(&$variables) {
   $this_page = $_GET['q'];
 
   // Fetch configuration.
-  $display_faq_count = variable_get('faq_count', FALSE);
-  $hide_child_terms = variable_get('faq_hide_child_terms', FALSE);
-  $show_term_page_children = variable_get('faq_show_term_page_children', FALSE);
+  $display_faq_count = $config->get('faq_count');
+  $hide_child_terms = $config->get('faq_hide_child_terms');
+  $show_term_page_children = $config->get('faq_show_term_page_children');
 
   // Initialise some variables.
   $get_child_terms = 0;
@@ -68,7 +69,7 @@ function template_preprocess_faq_category_new_page(&$variables) {
     $show_term_page_children = TRUE;
   }
 
-  $default_sorting = variable_get('faq_default_sorting', 'DESC');
+  $default_sorting = $config->get('faq_default_sorting');
   $default_weight = 0;
   if ($default_sorting != 'DESC') {
     $default_weight = 1000000;
@@ -105,7 +106,7 @@ function template_preprocess_faq_category_new_page(&$variables) {
     $child_categories = faq_view_child_category_headers($term);
   }
   $variables['subcat_list'] = $child_categories;
-  $variables['subcat_list_style'] = variable_get('faq_category_listing', 'ul');
+  $variables['subcat_list_style'] = $config->get('faq_category_listing');
 
   // Configure class (faq-qa or faq-qa-hide).
   if ($get_child_terms == $term->tid) {
@@ -135,6 +136,6 @@ function template_preprocess_faq_category_new_page(&$variables) {
     $nodes[] = l($node->title, "node/$node->nid");
   }
   $variables['question_list'] = $nodes;
-  $variables['question_list_style'] = variable_get('faq_question_listing', 'ul');
+  $variables['question_list_style'] = $config->get('faq_question_listing');
   $variables['question_count'] = $count;
 }
