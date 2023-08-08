@@ -1240,7 +1240,7 @@ function faq_view_question(&$data, $node, $path = NULL, $anchor = NULL) {
  */
 function faq_view_answer(&$data, $node, $back_to_top, $teaser, $links) {
   $view_mode = $teaser ? 'teaser' : 'full';
-  $langcode = $GLOBALS['language_content']->language;
+  $langcode = $GLOBALS['language_content']->langcode;
 
   // Build the faq node content and invoke other modules' links, etc, functions.
   $node = (object) $node;
@@ -1465,21 +1465,16 @@ function faq_view_child_category_headers($term) {
 /**
  * Implements hook_path_info().
  */
-function faq_path_info($op) {
-  switch ($op) {
-    case 'settings':
-      $settings = array();
-      $settings['module'] = 'faq';
-      $settings['groupheader'] = t('FAQ category page settings');
-      $settings['patterndescr'] = t('Default path pattern (applies to all FAQ categories with blank patterns below)');
-      $settings['patterndefault'] = t(_faq_path() . '/[term:tid]');
-      $settings['batch_update_callback'] = 'faq_path_bulkupdate';
-      $settings['token_type'] = 'term';
-      return (object) $settings;
+function faq_path_info() {
+  $info['faq'] = array(
+    'entity_type' => 'taxonomy_term',
+    'label' => t('FAQ category page settings'),
+    'pattern description' => t('Default path pattern (applies to all FAQ categories with blank patterns below)'),
+    'pattern default' => t(_faq_path() . '/[term:tid]'),
+    'batch update callback' => 'faq_path_bulkupdate',
+  );
 
-    default:
-      break;
-  }
+  return $info;
 }
 
 /**
@@ -1519,7 +1514,7 @@ function faq_path_bulkupdate() {
   $query->addField('td', 'tid');
   $query->isNull('ua.source');
   $query->condition('td.tid', $context['sandbox']['current'], '>');
-  $query->condition('td.vid', $faq_vocabs, 'IN');
+  $query->condition('td.vocabulary', $faq_vocabs, 'IN');
   $query->orderBy('td.tid');
   $query->addTag('path_bulk_update');
   $query->addMetaData('entity', 'taxonomy_term');
