@@ -919,7 +919,7 @@ function faq_block_view($delta) {
           $vocab_omit = array_flip($config->get('faq_omit_vocabulary'));
           $vocabularies = array_diff_key($vocabularies, $vocab_omit);
           foreach ($vocabularies as $vocab) {
-            foreach (taxonomy_get_tree($vocab->vid) as $term) {
+            foreach (taxonomy_get_tree($vocab->machine_name) as $term) {
               if (faq_taxonomy_term_count_nodes($term->tid)) {
                 $terms[$term->name] = $term->tid;
               }
@@ -1555,7 +1555,7 @@ function faq_taxonomy_term_insert($term) {
     $vocabularies = taxonomy_get_vocabularies('faq');
     $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
-      if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vid != $vid)) {
+      if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vocabulary != $vid)) {
         continue;
       }
       $alias = path_generate_entity_alias($term, _faq_path() . '/' . $term->tid);
@@ -1572,7 +1572,7 @@ function faq_taxonomy_term_update($term) {
     $vocabularies = taxonomy_get_vocabularies('faq');
     $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
-      if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vid != $vid)) {
+      if ((isset($vocab_omit[$vid]) && $vocab_omit[$vid] != 0) || ($term->vocabulary != $vid)) {
         continue;
       }
       $alias = path_generate_entity_alias($term, _faq_path() . '/' . $term->tid);
