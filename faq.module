@@ -1551,7 +1551,7 @@ function faq_path_bulkupdate() {
  */
 function faq_taxonomy_term_insert($term) {
   if (module_exists('path')) {
-
+    module_load_include('inc', 'path', 'path');
     $vocabularies = taxonomy_get_vocabularies('faq');
     $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
@@ -1568,7 +1568,7 @@ function faq_taxonomy_term_insert($term) {
  */
 function faq_taxonomy_term_update($term) {
   if (module_exists('path')) {
-
+    module_load_include('inc', 'path', 'path');
     $vocabularies = taxonomy_get_vocabularies('faq');
     $vocab_omit = config_get('faq.settings', 'faq_omit_vocabulary');
     foreach ($vocabularies as $vid => $vobj) {
