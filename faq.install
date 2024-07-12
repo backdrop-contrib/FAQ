@@ -366,7 +366,7 @@ function faq_update_1000() {
   $config->set('faq_description', update_variable_get('faq_description', array('value' => '', 'format' => filter_fallback_format())));
   $config->set('faq_custom_breadcrumbs', update_variable_get('faq_custom_breadcrumbs', TRUE));
   $config->set('faq_category_display', update_variable_get('faq_category_display', 'categories_inline'));
-  $config->set('faq_use_categories', update_variable_get('faq_use_categories', array()));
+  $config->set('faq_use_categories', update_variable_get('faq_use_categories', FALSE));
   $config->set('faq_display', update_variable_get('faq_display', 'questions_top'));
   $config->set('faq_question_listing', update_variable_get('faq_question_listing', 'ul'));
   $config->set('faq_qa_mark', update_variable_get('faq_qa_mark', array()));
