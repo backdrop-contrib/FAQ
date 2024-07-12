@@ -306,7 +306,9 @@ function _faq_installed_instances() {
  */
 function _faq_delete_custom_fields() {
   foreach (array_keys(_faq_installed_fields()) as $field) {
-    field_delete_field($field);
+    if (field_info_field($field)) {
+      field_delete_field($field);
+    }
   }
   $instances = field_info_instances('node', 'faq');
   foreach ($instances as $instance_name => $fieldinstance) {
